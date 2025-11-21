@@ -1,5 +1,6 @@
 <?php
 require_once 'config/config.php';
+require_once 'includes/functions.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -43,63 +44,181 @@ require_once 'config/config.php';
         </div>
     </section>
 
-    <!-- Featured Rooms -->
-    <section class="featured-rooms">
-        <div class="container">
-            <h2>Our Rooms</h2>
-            <div class="rooms-grid">
-                <?php
-                $query = "SELECT * FROM rooms WHERE is_available = 1 LIMIT 3";
-                $stmt = $db->prepare($query);
-                $stmt->execute();
+<!-- Featured Rooms Section - Replace in your index.php -->
+<section class="featured-rooms">
+    <div class="container">
+        <h2>Our Rooms</h2>
+        <div class="rooms-grid">
+            <?php
+            $query = "SELECT * FROM rooms WHERE is_available = 1 LIMIT 3";
+            $stmt = $db->prepare($query);
+            $stmt->execute();
+            
+            while ($room = $stmt->fetch(PDO::FETCH_ASSOC)):
+                $photos = getRoomPhotos($room['id']);
+            ?>
+            <div class="room-card">
+                <?php if (!empty($photos)): ?>
+                <div class="room-slider">
+                    <div class="slider-container">
+                        <?php foreach ($photos as $index => $photo): ?>
+                        <div class="slide <?php echo $index === 0 ? 'active' : ''; ?>">
+                            <img src="assets/images/rooms/uploads/<?php echo $photo['photo_filename']; ?>" 
+                                 alt="<?php echo getRoomTypeName($room['room_type']); ?>">
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    
+                    <?php if (count($photos) > 1): ?>
+                    <button class="slider-btn prev" onclick="moveSlide(this, -1)">❮</button>
+                    <button class="slider-btn next" onclick="moveSlide(this, 1)">❯</button>
+                    
+                    <div class="slider-dots">
+                        <?php foreach ($photos as $index => $photo): ?>
+                        <span class="dot <?php echo $index === 0 ? 'active' : ''; ?>" 
+                              onclick="goToSlide(this, <?php echo $index; ?>)"></span>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <?php else: ?>
+                <div class="room-image">
+                    <img src="assets/images/rooms/default.jpg" alt="Room">
+                </div>
+                <?php endif; ?>
                 
-                while ($room = $stmt->fetch(PDO::FETCH_ASSOC)):
-                ?>
-                <div class="room-card">
-                    <div class="room-image">
-                        <img src="assets/images/rooms/<?php echo $room['id']; ?>/1.jpg" alt="<?php echo getRoomTypeName($room['room_type']); ?>">
-                    </div>
-                    <div class="room-info">
-                        <h3><?php echo getRoomTypeName($room['room_type']); ?></h3>
-                        <p class="room-price">€<?php echo $room['price_per_night']; ?>/night</p>
-                        <p class="room-guests">Max guests: <?php echo $room['max_guests']; ?></p>
-                        <a href="rooms.php?room=<?php echo $room['id']; ?>" class="btn btn-secondary">View Details</a>
-                    </div>
-                </div>
-                <?php endwhile; ?>
-            </div>
-        </div>
-    </section>
-
-    <!-- About Ksamil Section -->
-    <section class="about-ksamil">
-        <div class="container">
-            <h2>Discover Ksamil</h2>
-            <p>Ksamil is one of the most beautiful tourist destinations in Albania, known for its crystal-clear waters, stunning beaches, and picturesque islands. Located in the Albanian Riviera, Ksamil offers a perfect blend of natural beauty and modern amenities.</p>
-            <div class="ksamil-features">
-                <div class="feature">
-                    <h3>Beautiful Beaches</h3>
-                    <p>Pristine sandy beaches with turquoise waters</p>
-                </div>
-                <div class="feature">
-                    <h3>Island Hopping</h3>
-                    <p>Visit the famous Ksamil Islands just minutes from shore</p>
-                </div>
-                <div class="feature">
-                    <h3>Mediterranean Cuisine</h3>
-                    <p>Enjoy fresh seafood and local delicacies</p>
+                <div class="room-info">
+                    <h3><?php echo getRoomTypeName($room['room_type']); ?></h3>
+                    <p class="room-price">€<?php echo $room['price_per_night']; ?>/night</p>
+                    <p class="room-guests">Max guests: <?php echo $room['max_guests']; ?></p>
+                    <a href="rooms.php?room=<?php echo $room['id']; ?>" class="btn btn-secondary">View Details</a>
                 </div>
             </div>
+            <?php endwhile; ?>
         </div>
-    </section>
+    </div>
+</section>
 
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <p>&copy; <?php echo date('Y'); ?> <?php echo SITE_NAME; ?>. All rights reserved.</p>
-        </div>
-    </footer>
+<style>
+/* Photo Slider Styles */
+.room-slider {
+    position: relative;
+    height: 250px;
+    overflow: hidden;
+    background: #000;
+}
 
-    <script src="assets/js/main.js"></script>
-</body>
-</html>
+.slider-container {
+    position: relative;
+    height: 100%;
+}
+
+.slide {
+    display: none;
+    height: 100%;
+}
+
+.slide.active {
+    display: block;
+}
+
+.slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.slider-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.5);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background 0.3s;
+    z-index: 10;
+}
+
+.slider-btn:hover {
+    background: rgba(0,0,0,0.8);
+}
+
+.slider-btn.prev {
+    left: 10px;
+}
+
+.slider-btn.next {
+    right: 10px;
+}
+
+.slider-dots {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.5);
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.dot.active,
+.dot:hover {
+    background: rgba(255,255,255,1);
+}
+</style>
+
+<script>
+// Photo Slider JavaScript
+function moveSlide(btn, direction) {
+    const slider = btn.closest('.room-slider');
+    const slides = slider.querySelectorAll('.slide');
+    const dots = slider.querySelectorAll('.dot');
+    let currentIndex = Array.from(slides).findIndex(slide => slide.classList.contains('active'));
+    
+    slides[currentIndex].classList.remove('active');
+    dots[currentIndex].classList.remove('active');
+    
+    currentIndex += direction;
+    if (currentIndex < 0) currentIndex = slides.length - 1;
+    if (currentIndex >= slides.length) currentIndex = 0;
+    
+    slides[currentIndex].classList.add('active');
+    dots[currentIndex].classList.add('active');
+}
+
+function goToSlide(dot, index) {
+    const slider = dot.closest('.room-slider');
+    const slides = slider.querySelectorAll('.slide');
+    const dots = slider.querySelectorAll('.dot');
+    
+    slides.forEach(slide => slide.classList.remove('active'));
+    dots.forEach(d => d.classList.remove('active'));
+    
+    slides[index].classList.add('active');
+    dots[index].classList.add('active');
+}
+
+// Auto-slide every 5 seconds
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.room-slider').forEach(slider => {
+        if (slider.querySelectorAll('.slide').length > 1) {
+            setInterval(() => {
+                const nextBtn = slider.querySelector('.next');
+                if (nextBtn) moveSlide(nextBtn, 1);
+            }, 5000);
+        }
+    });
+});
+</script>

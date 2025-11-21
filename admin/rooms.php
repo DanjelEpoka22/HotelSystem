@@ -42,6 +42,126 @@ function addRoom($room_data) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Room Management - <?php echo SITE_NAME; ?></title>
     <link rel="stylesheet" href="../assets/css/admin.css">
+    <style>
+    .photo-management {
+        margin-top: 1rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 5px;
+    }
+    .photos-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+    .photo-item {
+        position: relative;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .photo-item img {
+        width: 100%;
+        height: 150px;
+        object-fit: cover;
+    }
+    .photo-actions {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        display: flex;
+        gap: 5px;
+    }
+    .photo-actions button {
+        padding: 5px 10px;
+        font-size: 12px;
+        border: none;
+        border-radius: 3px;
+        cursor: pointer;
+        background: rgba(255,255,255,0.9);
+    }
+    .photo-actions .delete-photo {
+        background: #e74c3c;
+        color: white;
+    }
+    .upload-area {
+        border: 2px dashed #3498db;
+        border-radius: 8px;
+        padding: 2rem;
+        text-align: center;
+        cursor: pointer;
+        transition: background 0.3s;
+        margin-top: 1rem;
+    }
+    .upload-area:hover {
+        background: #ecf0f1;
+    }
+    .upload-area.dragover {
+        background: #d5e8f7;
+        border-color: #2980b9;
+    }
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+    }
+    .modal-content {
+        background: white;
+        margin: 2% auto;
+        padding: 2rem;
+        border-radius: 10px;
+        width: 90%;
+        max-width: 800px;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+    .close {
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        color: #aaa;
+    }
+    .close:hover {
+        color: #000;
+    }
+    .preview-images {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+        gap: 10px;
+        margin-top: 1rem;
+    }
+    .preview-item {
+        position: relative;
+    }
+    .preview-item img {
+        width: 100%;
+        height: 100px;
+        object-fit: cover;
+        border-radius: 5px;
+    }
+    .remove-preview {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        background: #e74c3c;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 25px;
+        height: 25px;
+        cursor: pointer;
+        font-size: 14px;
+        line-height: 1;
+    }
+    </style>
 </head>
 <body>
     <div class="admin-container">
@@ -132,13 +252,15 @@ function addRoom($room_data) {
                                 <th>Type</th>
                                 <th>Price/Night</th>
                                 <th>Max Guests</th>
+                                <th>Photos</th>
                                 <th>Status</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php
-                            $query = "SELECT r.*, rs.status as room_status 
+                            $query = "SELECT r.*, rs.status as room_status, 
+                                     (SELECT COUNT(*) FROM room_photos WHERE room_id = r.id) as photo_count
                                      FROM rooms r 
                                      LEFT JOIN room_status rs ON r.id = rs.room_id 
                                      ORDER BY r.room_number";
@@ -153,12 +275,16 @@ function addRoom($room_data) {
                                 <td>€<?php echo $room['price_per_night']; ?></td>
                                 <td><?php echo $room['max_guests']; ?></td>
                                 <td>
+                                    <span class="badge"><?php echo $room['photo_count']; ?> photos</span>
+                                </td>
+                                <td>
                                     <span class="status-badge status-<?php echo $room['room_status'] ?? 'clean'; ?>">
                                         <?php echo ucfirst($room['room_status'] ?? 'clean'); ?>
                                     </span>
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-secondary" onclick="editRoom(<?php echo $room['id']; ?>)">Edit</button>
+                                    <button class="btn btn-sm btn-primary" onclick="managePhotos(<?php echo $room['id']; ?>, '<?php echo addslashes($room['room_number']); ?>')">Photos</button>
                                     <button class="btn btn-sm btn-danger" onclick="deleteRoom(<?php echo $room['id']; ?>)">Delete</button>
                                 </td>
                             </tr>
@@ -170,15 +296,39 @@ function addRoom($room_data) {
         </div>
     </div>
 
+    <!-- Photo Management Modal -->
+    <div id="photoModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePhotoModal()">&times;</span>
+            <h2>Manage Photos - Room <span id="modalRoomNumber"></span></h2>
+            
+            <div class="upload-area" id="uploadArea">
+                <input type="file" id="photoInput" multiple accept="image/*" style="display:none;">
+                <p>📸 Click or drag photos here to upload</p>
+                <p style="font-size: 0.9rem; color: #666;">Supports: JPG, PNG, WEBP</p>
+            </div>
+
+            <div id="previewContainer" class="preview-images" style="display:none;"></div>
+            
+            <button id="uploadBtn" class="btn btn-primary" style="display:none; margin-top:1rem;">Upload Photos</button>
+
+            <div class="photo-management">
+                <h3>Current Photos</h3>
+                <div id="currentPhotos" class="photos-grid">
+                    <p>Loading photos...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../assets/js/admin-photos.js"></script>
     <script>
     function editRoom(roomId) {
-        // Implement edit functionality
-        alert('Edit room: ' + roomId);
+        alert('Edit functionality - Room ID: ' + roomId);
     }
 
     function deleteRoom(roomId) {
         if (confirm('Are you sure you want to delete this room?')) {
-            // Implement delete functionality
             fetch('ajax/room_actions.php?action=delete&id=' + roomId)
                 .then(response => response.json())
                 .then(data => {

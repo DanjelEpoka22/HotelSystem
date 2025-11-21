@@ -64,4 +64,29 @@ function canCancelReservation($check_in) {
     $cancellation_date = date('Y-m-d', strtotime($check_in . ' - ' . CANCELLATION_DAYS . ' days'));
     return date('Y-m-d') <= $cancellation_date;
 }
+function getRoomPhotos($room_id) {
+    global $db;
+    
+    $query = "SELECT * FROM room_photos WHERE room_id = :room_id ORDER BY display_order ASC, id ASC";
+    $stmt = $db->prepare($query);
+    $stmt->execute(['room_id' => $room_id]);
+    
+    return $stmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function getFirstRoomPhoto($room_id) {
+    global $db;
+    
+    $query = "SELECT photo_filename FROM room_photos WHERE room_id = :room_id ORDER BY display_order ASC, id ASC LIMIT 1";
+    $stmt = $db->prepare($query);
+    $stmt->execute(['room_id' => $room_id]);
+    
+    $photo = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($photo) {
+        return 'assets/images/rooms/uploads/' . $photo['photo_filename'];
+    }
+    
+    return 'assets/images/rooms/default.jpg';
+}
 ?>
