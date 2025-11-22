@@ -8,19 +8,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $password = $_POST['password'];
     
     if (login($username, $password)) {
-        // Redirect based on role
         switch ($_SESSION['role']) {
-            case 'admin':
-                redirect('admin/index.php');
-                break;
-            case 'receptionist':
-                redirect('receptionist/index.php');
-                break;
-            case 'housekeeper':
-                redirect('housekeeper/index.php');
-                break;
-            default:
-                redirect('user/index.php');
+            case 'admin': redirect('admin/index.php'); break;
+            case 'receptionist': redirect('receptionist/index.php'); break;
+            case 'housekeeper': redirect('housekeeper/index.php'); break;
+            default: redirect('user/index.php');
         }
     } else {
         $error = "Emri i përdoruesit ose fjalëkalimi i gabuar";
@@ -37,12 +29,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         :root {
             --primary-color: #2C5F7C;
             --secondary-color: #F4A261;
@@ -52,160 +38,133 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             --white: #FFFFFF;
         }
 
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
             font-family: 'Poppins', sans-serif;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--dark-color) 100%);
+            overflow: hidden;
+            color: var(--dark-color);
+        }
+
+        /* Video Background */
+        .video-background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+        }
+
+        #player {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100vw;
+            height: 100vh;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+
+        .video-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(44, 95, 124, 0.8), rgba(38, 70, 83, 0.6));
+            z-index: -1;
+        }
+
+        .video-fallback {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, var(--primary-color), var(--dark-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            z-index: -2;
+        }
+
+        /* Login Container */
+        .login-container {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 2rem;
-            position: relative;
-            overflow: hidden;
         }
 
-        body::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M 100 0 L 0 0 0 100" fill="none" stroke="rgba(255,255,255,0.03)" stroke-width="1"/></pattern></defs><rect width="100%" height="100%" fill="url(%23grid)"/></svg>');
-            opacity: 0.5;
-        }
-
-        .login-wrapper {
-            position: relative;
-            z-index: 1;
+        .login-box {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 3rem;
             width: 100%;
-            max-width: 500px;
+            max-width: 450px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: slideUp 0.8s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .login-header {
             text-align: center;
             margin-bottom: 2rem;
-            animation: fadeInDown 0.8s ease;
-        }
-
-        @keyframes fadeInDown {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
         }
 
         .login-logo {
-            width: 80px;
-            height: 80px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 1.5rem;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-        }
-
-        .login-logo i {
-            font-size: 2.5rem;
+            font-size: 3rem;
             color: var(--primary-color);
+            margin-bottom: 1rem;
         }
 
         .login-header h1 {
             font-family: 'Playfair Display', serif;
-            font-size: 2.5rem;
-            color: white;
+            font-size: 2.2rem;
+            color: var(--primary-color);
             margin-bottom: 0.5rem;
         }
 
         .login-header p {
-            color: rgba(255,255,255,0.8);
-            font-size: 1.1rem;
-        }
-
-        .login-container {
-            background: white;
-            border-radius: 25px;
-            padding: 3rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            animation: fadeInUp 0.8s ease 0.2s both;
-        }
-
-        .login-container h2 {
-            font-family: 'Playfair Display', serif;
-            font-size: 2rem;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-        }
-
-        .login-subtitle {
             color: #666;
-            margin-bottom: 2rem;
-            font-size: 0.95rem;
+            font-size: 1rem;
         }
 
-        .alert {
-            padding: 1rem;
-            border-radius: 12px;
-            margin-bottom: 1.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            animation: shake 0.5s;
-        }
-
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
-
-        .alert-error {
-            background: #fee;
-            color: #c33;
-            border: 1px solid #fcc;
-        }
-
-        .alert i {
-            font-size: 1.2rem;
-        }
-
+        /* Form Styles */
         .form-group {
             margin-bottom: 1.5rem;
+        }
+
+        .input-group {
             position: relative;
         }
 
-        .form-label {
-            display: block;
-            font-weight: 600;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-            font-size: 0.95rem;
-        }
-
-        .form-label i {
-            margin-right: 0.5rem;
-            color: var(--secondary-color);
-        }
-
-        .input-wrapper {
-            position: relative;
+        .input-group i {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+            z-index: 2;
         }
 
         .form-control {
@@ -214,9 +173,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border: 2px solid #e0e0e0;
             border-radius: 12px;
             font-size: 1rem;
-            font-family: 'Poppins', sans-serif;
+            background: var(--light-color);
             transition: all 0.3s ease;
-            background: #f8f9fa;
         }
 
         .form-control:focus {
@@ -224,20 +182,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-color: var(--secondary-color);
             background: white;
             box-shadow: 0 0 0 4px rgba(244, 162, 97, 0.1);
-        }
-
-        .input-icon {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #999;
-            font-size: 1.1rem;
-            transition: color 0.3s;
-        }
-
-        .form-control:focus + .input-icon {
-            color: var(--secondary-color);
         }
 
         .password-toggle {
@@ -249,56 +193,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border: none;
             color: #999;
             cursor: pointer;
-            font-size: 1.1rem;
-            transition: color 0.3s;
         }
 
-        .password-toggle:hover {
-            color: var(--primary-color);
-        }
-
-        .form-options {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .alert {
+            padding: 1rem;
+            border-radius: 12px;
             margin-bottom: 1.5rem;
-            font-size: 0.9rem;
-        }
-
-        .remember-me {
+            background: #fee;
+            color: #c33;
+            border: 1px solid #fcc;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            color: #666;
-        }
-
-        .remember-me input[type="checkbox"] {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        .forgot-password {
-            color: var(--secondary-color);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-
-        .forgot-password:hover {
-            color: var(--accent-color);
-            text-decoration: underline;
         }
 
         .btn {
             width: 100%;
-            padding: 1.2rem;
+            padding: 1rem;
             border: none;
-            border-radius: 50px;
+            border-radius: 12px;
             font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-family: 'Poppins', sans-serif;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -308,210 +225,196 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .btn-primary {
             background: linear-gradient(135deg, var(--secondary-color), var(--accent-color));
             color: white;
-            box-shadow: 0 4px 15px rgba(244, 162, 97, 0.4);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(231, 111, 81, 0.5);
+            box-shadow: 0 5px 20px rgba(231, 111, 81, 0.4);
         }
 
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .divider {
-            text-align: center;
-            margin: 2rem 0;
-            position: relative;
-            color: #999;
-            font-size: 0.9rem;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            width: 45%;
-            height: 1px;
-            background: #e0e0e0;
-        }
-
-        .divider::before {
-            left: 0;
-        }
-
-        .divider::after {
-            right: 0;
-        }
-
-        .register-link {
+        .links {
             text-align: center;
             margin-top: 2rem;
             padding-top: 2rem;
             border-top: 1px solid #e0e0e0;
-            color: #666;
         }
 
-        .register-link a {
+        .links a {
             color: var(--secondary-color);
             text-decoration: none;
-            font-weight: 600;
             transition: color 0.3s;
         }
 
-        .register-link a:hover {
+        .links a:hover {
             color: var(--accent-color);
-            text-decoration: underline;
-        }
-
-        .back-home {
-            text-align: center;
-            margin-top: 2rem;
-        }
-
-        .back-home a {
-            color: rgba(255,255,255,0.9);
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.75rem 1.5rem;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50px;
-            transition: all 0.3s ease;
-        }
-
-        .back-home a:hover {
-            background: rgba(255,255,255,0.1);
-            border-color: rgba(255,255,255,0.6);
-            transform: translateY(-2px);
         }
 
         @media (max-width: 768px) {
-            body {
+            .login-container {
                 padding: 1rem;
             }
-
-            .login-container {
+            
+            .login-box {
                 padding: 2rem 1.5rem;
             }
-
+            
             .login-header h1 {
-                font-size: 2rem;
-            }
-
-            .form-options {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 1rem;
+                font-size: 1.8rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="login-wrapper">
-        <div class="login-header" data-aos="fade-down">
-            <div class="login-logo">
-                <i class="fas fa-hotel"></i>
+    <!-- Video Background -->
+    <div class="video-background">
+        <div id="player"></div>
+        <div class="video-fallback" id="videoFallback">
+            <div>
+                <i class="fas fa-hotel fa-3x" style="margin-bottom: 1rem;"></i>
+                <p>Villa Adrian - Ksamil</p>
             </div>
-            <h1>Villa Adrian</h1>
-            <p>Mirë se vini përsëri!</p>
         </div>
+    </div>
+    <div class="video-overlay"></div>
 
-        <div class="login-container" data-aos="fade-up">
-            <h2>Hyni në Llogarinë Tuaj</h2>
-            <p class="login-subtitle">Hyni për të menaxhuar rezervimet tuaja</p>
+    <!-- Login Container -->
+    <div class="login-container">
+        <div class="login-box">
+            <div class="login-header">
+                <div class="login-logo">
+                    <i class="fas fa-hotel"></i>
+                </div>
+                <h1>Villa Adrian</h1>
+                <p>Mirë se vini përsëri</p>
+            </div>
 
             <?php if (isset($error)): ?>
-                <div class="alert alert-error">
+                <div class="alert">
                     <i class="fas fa-exclamation-circle"></i>
-                    <span><?php echo $error; ?></span>
+                    <?php echo $error; ?>
                 </div>
             <?php endif; ?>
 
             <form method="POST">
                 <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-user"></i> Emri i Përdoruesit ose Email
-                    </label>
-                    <div class="input-wrapper">
+                    <div class="input-group">
+                        <i class="fas fa-user"></i>
                         <input type="text" 
-                               id="username" 
                                name="username" 
                                class="form-control" 
-                               placeholder="Shkruani emrin ose email-in"
-                               required
-                               autocomplete="username">
-                        <i class="fas fa-user input-icon"></i>
+                               placeholder="Emri i përdoruesit ose email"
+                               required>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">
-                        <i class="fas fa-lock"></i> Fjalëkalimi
-                    </label>
-                    <div class="input-wrapper">
+                    <div class="input-group">
+                        <i class="fas fa-lock"></i>
                         <input type="password" 
                                id="password" 
                                name="password" 
                                class="form-control" 
-                               placeholder="Shkruani fjalëkalimin"
-                               required
-                               autocomplete="current-password">
-                        <i class="fas fa-lock input-icon"></i>
-                        <button type="button" class="password-toggle" onclick="togglePassword('password')">
+                               placeholder="Fjalëkalimi"
+                               required>
+                        <button type="button" class="password-toggle" onclick="togglePassword()">
                             <i class="fas fa-eye" id="password-icon"></i>
                         </button>
                     </div>
                 </div>
 
-                <div class="form-options">
-                    <label class="remember-me">
-                        <input type="checkbox" name="remember">
-                        <span>Më mbaj mend</span>
-                    </label>
-                    <a href="#" class="forgot-password">Keni harruar fjalëkalimin?</a>
-                </div>
-
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-sign-in-alt"></i>
-                    <span>Hyni në Llogari</span>
+                    Hyni në Llogari
                 </button>
             </form>
 
-            <div class="register-link">
+            <div class="links">
                 <p>Nuk keni llogari? <a href="register.php">Regjistrohuni këtu</a></p>
+                <p style="margin-top: 0.5rem;">
+                    <a href="index.php">
+                        <i class="fas fa-arrow-left"></i> Kthehu në Faqen Kryesore
+                    </a>
+                </p>
             </div>
-        </div>
-
-        <div class="back-home" data-aos="fade-up" data-aos-delay="300">
-            <a href="index.php">
-                <i class="fas fa-arrow-left"></i>
-                <span>Kthehu në Faqen Kryesore</span>
-            </a>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
     <script>
-        AOS.init({ duration: 800 });
+        // YouTube Video Background
+        let player;
+        let videoLoaded = false;
 
-        function togglePassword(fieldId) {
-            const field = document.getElementById(fieldId);
-            const icon = document.getElementById(fieldId + '-icon');
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+        function onYouTubeIframeAPIReady() {
+            player = new YT.Player('player', {
+                height: '100%',
+                width: '100%',
+                videoId: '1uRhWxRpHKM',
+                playerVars: {
+                    'autoplay': 1,
+                    'controls': 0,
+                    'showinfo': 0,
+                    'modestbranding': 1,
+                    'loop': 1,
+                    'playlist': '1uRhWxRpHKM',
+                    'fs': 0,
+                    'mute': 1,
+                    'rel': 0
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange,
+                    'onError': onPlayerError
+                }
+            });
+        }
+
+        function onPlayerReady(event) {
+            videoLoaded = true;
+            document.getElementById('videoFallback').style.display = 'none';
+            event.target.mute();
+            event.target.playVideo();
+        }
+
+        function onPlayerStateChange(event) {
+            if (event.data === YT.PlayerState.ENDED) {
+                player.playVideo();
+            }
+        }
+
+        function onPlayerError(event) {
+            document.getElementById('videoFallback').style.display = 'flex';
+        }
+
+        setTimeout(() => {
+            if (!videoLoaded) {
+                document.getElementById('videoFallback').style.display = 'flex';
+            }
+        }, 5000);
+        
+
+        // Password toggle
+        function togglePassword() {
+            const password = document.getElementById('password');
+            const icon = document.getElementById('password-icon');
             
-            if (field.type === 'password') {
-                field.type = 'text';
+            if (password.type === 'password') {
+                password.type = 'text';
                 icon.classList.remove('fa-eye');
                 icon.classList.add('fa-eye-slash');
             } else {
-                field.type = 'password';
+                password.type = 'password';
                 icon.classList.remove('fa-eye-slash');
                 icon.classList.add('fa-eye');
             }
         }
+
+        AOS.init({ duration: 800 });
     </script>
 </body>
 </html>

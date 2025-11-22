@@ -227,20 +227,36 @@ requireAuth();
             box-shadow: 0 15px 40px rgba(0,0,0,0.15);
         }
 
-        .room-image {
-            height: 250px;
-            overflow: hidden;
+        .room-slider {
             position: relative;
+            height: 300px;
+            overflow: hidden;
+            background: #f0f0f0;
         }
 
-        .room-image img {
+        .slide {
+            display: none;
+            height: 100%;
+        }
+
+        .slide.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .slide img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: transform 0.5s ease;
+            transition: transform 0.3s ease;
         }
 
-        .room-card:hover .room-image img {
+        .room-card:hover .slide img {
             transform: scale(1.1);
         }
 
@@ -255,6 +271,64 @@ requireAuth();
             font-weight: 600;
             font-size: 1.2rem;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            z-index: 10;
+        }
+
+        .slider-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.9);
+            color: var(--primary-color);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+        }
+
+        .room-card:hover .slider-btn {
+            opacity: 1;
+        }
+
+        .slider-btn:hover {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .slider-btn.prev { left: 15px; }
+        .slider-btn.next { right: 15px; }
+
+        .slider-dots {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .dot.active,
+        .dot:hover {
+            background: var(--secondary-color);
+            transform: scale(1.2);
         }
 
         .room-info {
@@ -268,9 +342,68 @@ requireAuth();
             margin-bottom: 1rem;
         }
 
+        .room-number {
+            color: #999;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .room-features {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .feature {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            color: #666;
+        }
+
+        .feature i {
+            color: var(--secondary-color);
+        }
+
+        .room-description {
+            color: #666;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+
+        .room-amenities {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .amenity-tag {
+            background: linear-gradient(135deg, #f0f4f8, #e0e7ef);
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: var(--primary-color);
+            border: 1px solid rgba(44, 95, 124, 0.1);
+        }
+
         .room-actions {
             display: flex;
             gap: 1rem;
+        }
+
+        .no-rooms {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #999;
+        }
+
+        .no-rooms i {
+            font-size: 4rem;
+            color: #ddd;
+            margin-bottom: 1rem;
         }
 
         /* Modal */
@@ -285,11 +418,6 @@ requireAuth();
             background-color: rgba(0,0,0,0.8);
             backdrop-filter: blur(5px);
             animation: fadeIn 0.3s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
 
         .modal-content {
@@ -526,6 +654,36 @@ requireAuth();
         document.addEventListener('DOMContentLoaded', function() {
             window.bookingManager = new BookingManager();
         });
+
+        // Slider functions
+        function moveSlide(btn, direction) {
+            const slider = btn.closest('.room-slider');
+            const slides = slider.querySelectorAll('.slide');
+            const dots = slider.querySelectorAll('.dot');
+            let currentIndex = Array.from(slides).findIndex(slide => slide.classList.contains('active'));
+            
+            slides[currentIndex].classList.remove('active');
+            if (dots.length > 0) dots[currentIndex].classList.remove('active');
+            
+            currentIndex += direction;
+            if (currentIndex < 0) currentIndex = slides.length - 1;
+            if (currentIndex >= slides.length) currentIndex = 0;
+            
+            slides[currentIndex].classList.add('active');
+            if (dots.length > 0) dots[currentIndex].classList.add('active');
+        }
+
+        function goToSlide(dot, index) {
+            const slider = dot.closest('.room-slider');
+            const slides = slider.querySelectorAll('.slide');
+            const dots = slider.querySelectorAll('.dot');
+            
+            slides.forEach(slide => slide.classList.remove('active'));
+            dots.forEach(d => d.classList.remove('active'));
+            
+            slides[index].classList.add('active');
+            dots[index].classList.add('active');
+        }
     </script>
 </body>
 </html>

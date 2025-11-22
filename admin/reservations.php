@@ -202,24 +202,114 @@ $date_to = $_GET['date_to'] ?? '';
         </div>
     </div>
 
+    <!-- Reservation Details Modal -->
+    <div id="reservationModal" class="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);align-items:center;justify-content:center;">
+        <div class="modal-content" style="background:#fff;padding:20px;width:90%;max-width:700px;border-radius:6px;position:relative;">
+            <button id="modalClose" style="position:absolute;right:10px;top:10px;">&times;</button>
+            <h3>Reservation Details</h3>
+            <div id="reservationDetails">
+                <!-- Populated by JS -->
+                <p><strong>ID:</strong> <span id="res_id"></span></p>
+                <p><strong>Guest:</strong> <span id="res_guest"></span></p>
+                <p><strong>Email:</strong> <span id="res_email"></span></p>
+                <p><strong>Phone:</strong> <span id="res_phone"></span></p>
+                <p><strong>Room:</strong> <span id="res_room"></span></p>
+                <p><strong>Room Type:</strong> <span id="res_room_type"></span></p>
+                <p><strong>Check-in:</strong> <span id="res_checkin"></span></p>
+                <p><strong>Check-out:</strong> <span id="res_checkout"></span></p>
+                <p><strong>Total:</strong> €<span id="res_total"></span></p>
+                <p><strong>Payment:</strong> <span id="res_payment_status"></span> <small id="res_transaction"></small></p>
+                <p><strong>Status:</strong> <span id="res_status"></span></p>
+                <p><strong>Source:</strong> <span id="res_source"></span></p>
+                <p><strong>Notes:</strong> <span id="res_notes"></span></p>
+            </div>
+
+            <div style="margin-top:15px;text-align:right;">
+                <button id="modalCancelBtn" class="btn btn-danger" style="display:none;">Cancel Reservation</button>
+                <button id="modalCloseBtn" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+    // Show reservation details in modal by calling admin/ajax/reservation_actions.php?action=get_details
     function viewReservation(reservationId) {
-        window.open('reservation_details.php?id=' + reservationId, '_blank');
+        fetch('ajax/reservation_actions.php?action=get_details&id=' + encodeURIComponent(reservationId))
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.reservation) {
+                    const r = data.reservation;
+                    document.getElementById('res_id').textContent = r.id;
+                    document.getElementById('res_guest').textContent = (r.first_name || '') + ' ' + (r.last_name || '');
+                    document.getElementById('res_email').textContent = r.email || '';
+                    document.getElementById('res_phone').textContent = r.phone || '';
+                    document.getElementById('res_room').textContent = r.room_number || '';
+                    document.getElementById('res_room_type').textContent = r.room_type_name || r.room_type || '';
+                    document.getElementById('res_checkin').textContent = r.check_in ? new Date(r.check_in).toLocaleDateString() : '';
+                    document.getElementById('res_checkout').textContent = r.check_out ? new Date(r.check_out).toLocaleDateString() : '';
+                    document.getElementById('res_total').textContent = r.total_price || r.total || '';
+                    document.getElementById('res_payment_status').textContent = r.payment_status || 'N/A';
+                    document.getElementById('res_transaction').textContent = r.transaction_id ? ('(tx: '+r.transaction_id+')') : '';
+                    document.getElementById('res_status').textContent = r.status || '';
+                    document.getElementById('res_source').textContent = r.source || '';
+                    document.getElementById('res_notes').textContent = r.notes || '';
+
+                    // Show cancel button only if not already cancelled/checked_out
+                    const cancelBtn = document.getElementById('modalCancelBtn');
+                    if (r.status && (r.status === 'cancelled' || r.status === 'checked_out')) {
+                        cancelBtn.style.display = 'none';
+                    } else {
+                        cancelBtn.style.display = 'inline-block';
+                        // attach handler
+                        cancelBtn.onclick = function() {
+                            if (!confirm('Are you sure you want to cancel reservation #' + r.id + '?')) return;
+                            cancelReservation(r.id, true);
+                        };
+                    }
+
+                    // show modal
+                    const modal = document.getElementById('reservationModal');
+                    modal.style.display = 'flex';
+                } else {
+                    alert('Error fetching reservation details: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                alert('Failed to fetch reservation details: ' + err.message);
+            });
     }
 
-    function cancelReservation(reservationId) {
-        if (confirm('Are you sure you want to cancel this reservation?')) {
-            fetch('ajax/reservation_actions.php?action=cancel&id=' + reservationId)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('Error: ' + data.error);
+    // Cancel reservation via AJAX. If fromModal = true, close modal on success.
+    function cancelReservation(reservationId, fromModal = false) {
+        if (!fromModal && !confirm('Are you sure you want to cancel this reservation?')) return;
+
+        fetch('ajax/reservation_actions.php?action=cancel&id=' + encodeURIComponent(reservationId))
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (fromModal) {
+                        // close modal
+                        document.getElementById('reservationModal').style.display = 'none';
                     }
-                });
-        }
+                    // reload to reflect changes
+                    location.reload();
+                } else {
+                    alert('Error cancelling reservation: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(err => {
+                alert('Failed to cancel reservation: ' + err.message);
+            });
     }
+
+    // Modal close handlers
+    document.getElementById('modalClose').addEventListener('click', function(){ document.getElementById('reservationModal').style.display = 'none'; });
+    document.getElementById('modalCloseBtn').addEventListener('click', function(){ document.getElementById('reservationModal').style.display = 'none'; });
+
+    // close modal when clicking outside content
+    document.getElementById('reservationModal').addEventListener('click', function(e){
+        if (e.target === this) this.style.display = 'none';
+    });
     </script>
 </body>
 </html>

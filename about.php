@@ -106,7 +106,7 @@ require_once 'includes/functions.php';
         .page-hero {
             height: 70vh;
             background: linear-gradient(rgba(44, 95, 124, 0.7), rgba(38, 70, 83, 0.6)), 
-                        url('assets/images/ksamil/ksamil-beach.jpg');
+                        url('assets/images/ksamil.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
@@ -759,7 +759,7 @@ require_once 'includes/functions.php';
         <div class="story-container">
             <div class="story-grid">
                 <div class="story-image" data-aos="fade-right">
-                    <img src="assets/images/hotel.jpg" >
+                    <img src="assets/images/hoteli.jpeg" >
                 </div>
                 
                 <div class="story-text" data-aos="fade-left">
@@ -799,7 +799,7 @@ require_once 'includes/functions.php';
             <div class="activities-grid">
                 <div class="activity-card" data-aos="flip-left">
                     <div class="activity-image">
-                        <img src="assets/images/ksamil/boat-tour.jpg" >
+                        <img src="assets/images/ksamil/boat-tour.webp" >
                     </div>
                     <div class="activity-info">
                         <h3>Ture me Varkë</h3>
@@ -829,7 +829,7 @@ require_once 'includes/functions.php';
                 
                 <div class="activity-card" data-aos="flip-left" data-aos-delay="300">
                     <div class="activity-image">
-                        <img src="assets/images/ksamil/saranda.jpg" >
+                        <img src="assets/images/ksamil/saranda.webp" >
                     </div>
                     <div class="activity-info">
                         <h3>Ekskursion në Sarandë</h3>

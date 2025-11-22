@@ -124,7 +124,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .page-hero {
             height: 60vh;
             background: linear-gradient(rgba(44, 95, 124, 0.8), rgba(38, 70, 83, 0.7)), 
-                        url('assets/images/hotel/contact-header.jpg');
+                        url('assets/images/ksamil.jpg');
             background-size: cover;
             background-position: center;
             background-attachment: fixed;
