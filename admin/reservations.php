@@ -174,6 +174,7 @@ $date_to = $_GET['date_to'] ?? '';
                                 <td>
                                     <form method="POST" class="status-form">
                                         <input type="hidden" name="reservation_id" value="<?php echo $reservation['id']; ?>">
+                                        <input type="hidden" name="update_status" value="1">
                                         <select name="status" onchange="this.form.submit()" class="status-select">
                                             <option value="pending" <?php echo $reservation['status'] === 'pending' ? 'selected' : ''; ?>>Pending</option>
                                             <option value="confirmed" <?php echo $reservation['status'] === 'confirmed' ? 'selected' : ''; ?>>Confirmed</option>

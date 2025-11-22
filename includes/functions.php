@@ -61,8 +61,20 @@ function getRoomTypeName($room_type) {
 }
 
 function canCancelReservation($check_in) {
-    $cancellation_date = date('Y-m-d', strtotime($check_in . ' - ' . CANCELLATION_DAYS . ' days'));
-    return date('Y-m-d') <= $cancellation_date;
+    $check_in_date = new DateTime($check_in);
+    $today = new DateTime();
+    $today->setTime(0, 0, 0); // Set to beginning of day for accurate comparison
+    
+    $cancellation_deadline = clone $check_in_date;
+    $cancellation_deadline->modify('-' . CANCELLATION_DAYS . ' days');
+    
+    // Debug output (remove after testing)
+    error_log("Check-in: " . $check_in_date->format('Y-m-d'));
+    error_log("Today: " . $today->format('Y-m-d'));
+    error_log("Cancellation deadline: " . $cancellation_deadline->format('Y-m-d'));
+    error_log("Can cancel: " . ($today < $cancellation_deadline ? 'YES' : 'NO'));
+    
+    return $today < $cancellation_deadline;
 }
 function getRoomPhotos($room_id) {
     global $db;

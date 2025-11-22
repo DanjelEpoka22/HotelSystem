@@ -129,7 +129,7 @@ if (isset($_GET['id'])) {
                              JOIN users u ON r.user_id = u.id 
                              JOIN rooms rm ON r.room_id = rm.id 
                              WHERE (r.id LIKE :search OR u.first_name LIKE :search OR u.last_name LIKE :search)
-                             AND r.status = 'confirmed'
+                             AND r.status IN ('confirmed', 'pending')
                              AND r.check_in <= CURDATE() 
                              AND r.check_out >= CURDATE()";
                     $stmt = $db->prepare($query);
